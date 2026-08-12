@@ -2,27 +2,28 @@
 {% comment %}
     Rendered into the AA Services page flex/grid alongside the other service
     cards. Returns a self-contained Bootstrap 5 card (not a <tr>) so it matches
-    the Discord cards instead of collapsing into a broken table row.
+    the Discord cards, including the default grey card-footer.
 {% endcomment %}
 <div class="col-12 col-md-6 col-lg-4 col-xl-3 mb-3">
     <div class="card h-100 text-center">
-        <div class="card-body d-flex flex-column">
+        <div class="card-body">
             <h4 class="card-title mb-2">{{ service_name }}</h4>
             {% if connected %}
-                <span class="badge bg-success mx-auto mb-3">{% trans "Enabled" %}</span>
+                <span class="badge bg-success">{% trans "Enabled" %}</span>
             {% else %}
-                <span class="badge bg-secondary mx-auto mb-3">{% trans "Disabled" %}</span>
+                <span class="badge bg-secondary">{% trans "Disabled" %}</span>
             {% endif %}
+            <p class="card-text mt-3 mb-1">OBP Industry Tools</p>
             {% if connected %}
                 <p class="card-text mb-1">{{ username }}</p>
             {% endif %}
             {% if service_url %}
-                <p class="card-text small mb-0 mt-auto">
+                <p class="card-text small mb-0">
                     <a href="{{ service_url }}" target="_blank" rel="noopener">{{ service_url }}</a>
                 </p>
             {% endif %}
         </div>
-        <div class="card-footer bg-transparent border-top-0 pb-3">
+        <div class="card-footer">
             {% if connected %}
                 <a href="{% url urls.auth_deactivate %}"
                    class="btn btn-danger"
