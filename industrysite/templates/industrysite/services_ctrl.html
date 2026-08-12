@@ -1,0 +1,27 @@
+{% load i18n %}
+<tr>
+    <td class="text-center align-middle">{{ service_name }}</td>
+    <td class="text-center align-middle">
+        {% if connected %}{{ username }}{% else %}-{% endif %}
+    </td>
+    <td class="text-center align-middle">
+        {% if service_url %}
+            <a href="{{ service_url }}" target="_blank" rel="noopener">{{ service_url }}</a>
+        {% else %}-{% endif %}
+    </td>
+    <td class="text-end align-middle">
+        {% if connected %}
+            <a href="{% url urls.auth_deactivate %}"
+               class="btn btn-danger"
+               title="{% trans 'Disconnect from the Industry Site' %}">
+                <i class="fas fa-times"></i>
+            </a>
+        {% else %}
+            <a href="{% url urls.auth_activate %}"
+               class="btn btn-success"
+               title="{% trans 'Register my characters with the Industry Site' %}">
+                <i class="fas fa-plus"></i>
+            </a>
+        {% endif %}
+    </td>
+</tr>

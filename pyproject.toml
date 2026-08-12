@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "allianceauth-industrysite"
+version = "1.0.0"
+description = "Alliance Auth service that registers a member's characters with the Ore Build Profit industrial site and offloads ESI data to it."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [{ name = "Ore Build Profit" }]
+keywords = ["allianceauth", "eveonline", "esi", "industry"]
+dependencies = [
+    "requests>=2.20",
+]
+classifiers = [
+    "Environment :: Web Environment",
+    "Framework :: Django",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Internet :: WWW/HTTP",
+]
+
+[project.urls]
+Homepage = "https://github.com/caseydn/allianceauth-industrysite"
+Source = "https://github.com/caseydn/allianceauth-industrysite"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["industrysite*"]
+
+[tool.setuptools.package-data]
+industrysite = ["templates/**/*.html"]
