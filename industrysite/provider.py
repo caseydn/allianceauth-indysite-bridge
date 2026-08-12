@@ -19,15 +19,30 @@ from functools import wraps
 from django.core.cache import cache
 from django.http import HttpResponseForbidden, JsonResponse
 
-from esi.clients import EsiClientProvider
-from esi.models import Token
-
 from . import app_settings, data_sources
 from .signing import verify
 
 logger = logging.getLogger(__name__)
 
-esi = EsiClientProvider(app_info_text="industrysite")
+# The ESI client is built lazily on first use so that importing this module
+# during Django/AA startup can never crash the app server (which would 502).
+_esi_provider = None
+
+
+def _esi_client():
+    global _esi_provider
+    if _esi_provider is None:
+        from esi.clients import EsiClientProvider
+
+        _esi_provider = EsiClientProvider()
+    return _esi_provider.client
+
+
+def _token_model():
+    from esi.models import Token
+
+    return Token
+
 
 # Scope required to read each dataset.
 SCOPE_ASSETS = "esi-assets.read_assets.v1"
@@ -48,6 +63,7 @@ def require_signature(view):
 
 
 def _valid_token(character_id: int, scope: str):
+    Token = _token_model()
     return (
         Token.objects.filter(character_id=character_id, scopes__name=scope)
         .require_valid()
@@ -94,13 +110,13 @@ def _respond(character_id: int, kind: str, scope: str, cached_source, esi_fetch)
 
 
 def _fetch_assets(character_id, token):
-    return esi.client.Assets.get_characters_character_id_assets(
+    return _esi_client().Assets.get_characters_character_id_assets(
         character_id=character_id, token=token.valid_access_token()
     ).results()
 
 
 def _fetch_industry_jobs(character_id, token):
-    return esi.client.Industry.get_characters_character_id_industry_jobs(
+    return _esi_client().Industry.get_characters_character_id_industry_jobs(
         character_id=character_id,
         include_completed=True,
         token=token.valid_access_token(),
@@ -108,7 +124,7 @@ def _fetch_industry_jobs(character_id, token):
 
 
 def _fetch_skills(character_id, token):
-    return esi.client.Skills.get_characters_character_id_skills(
+    return _esi_client().Skills.get_characters_character_id_skills(
         character_id=character_id, token=token.valid_access_token()
     ).result()
 

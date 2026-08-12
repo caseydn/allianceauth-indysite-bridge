@@ -22,7 +22,7 @@ sudo su - allianceserver
 source /home/allianceserver/venv/auth/bin/activate      # adjust to your venv path
 
 # Install straight from GitHub (replace CHANGEME with your GitHub user/org):
-pip install git+https://github.com/caseydn/allianceauth-industrysite.git
+pip install git+https://github.com/caseydn/allianceauth-indysite-bridge.git
 
 # ...or, once published to PyPI:
 # pip install allianceauth-industrysite
@@ -66,7 +66,7 @@ Upgrade later with:
 ```bash
 sudo su - allianceserver
 source /home/allianceserver/venv/auth/bin/activate
-pip install --upgrade git+https://github.com/caseydn/allianceauth-industrysite.git
+pip install --upgrade git+https://github.com/caseydn/allianceauth-indysite-bridge.git
 cd /home/allianceserver/myauth && python manage.py migrate && python manage.py collectstatic --noinput
 exit
 sudo supervisorctl restart myauth:
