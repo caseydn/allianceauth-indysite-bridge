@@ -12,4 +12,4 @@ can read character assets / industry jobs / skills from Alliance Auth
 instead of calling CCP ESI itself (ESI offload).
 """
 
-__version__ = "1.0.1"
+__version__ = "1.0.2"

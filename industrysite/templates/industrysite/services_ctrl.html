@@ -1,27 +1,41 @@
 {% load i18n %}
-<tr>
-    <td class="text-center align-middle">{{ service_name }}</td>
-    <td class="text-center align-middle">
-        {% if connected %}{{ username }}{% else %}-{% endif %}
-    </td>
-    <td class="text-center align-middle">
-        {% if service_url %}
-            <a href="{{ service_url }}" target="_blank" rel="noopener">{{ service_url }}</a>
-        {% else %}-{% endif %}
-    </td>
-    <td class="text-end align-middle">
-        {% if connected %}
-            <a href="{% url urls.auth_deactivate %}"
-               class="btn btn-danger"
-               title="{% trans 'Disconnect from the Industry Site' %}">
-                <i class="fas fa-times"></i>
-            </a>
-        {% else %}
-            <a href="{% url urls.auth_activate %}"
-               class="btn btn-success"
-               title="{% trans 'Register my characters with the Industry Site' %}">
-                <i class="fas fa-plus"></i>
-            </a>
-        {% endif %}
-    </td>
-</tr>
+{% comment %}
+    Rendered into the AA Services page flex/grid alongside the other service
+    cards. Returns a self-contained Bootstrap 5 card (not a <tr>) so it matches
+    the Discord cards instead of collapsing into a broken table row.
+{% endcomment %}
+<div class="col-12 col-md-6 col-lg-4 col-xl-3 mb-3">
+    <div class="card h-100 text-center">
+        <div class="card-body d-flex flex-column">
+            <h4 class="card-title mb-2">{{ service_name }}</h4>
+            {% if connected %}
+                <span class="badge bg-success mx-auto mb-3">{% trans "Enabled" %}</span>
+            {% else %}
+                <span class="badge bg-secondary mx-auto mb-3">{% trans "Disabled" %}</span>
+            {% endif %}
+            {% if connected %}
+                <p class="card-text mb-1">{{ username }}</p>
+            {% endif %}
+            {% if service_url %}
+                <p class="card-text small mb-0 mt-auto">
+                    <a href="{{ service_url }}" target="_blank" rel="noopener">{{ service_url }}</a>
+                </p>
+            {% endif %}
+        </div>
+        <div class="card-footer bg-transparent border-top-0 pb-3">
+            {% if connected %}
+                <a href="{% url urls.auth_deactivate %}"
+                   class="btn btn-danger"
+                   title="{% trans 'Deactivate the Industry Site service' %}">
+                    <i class="fas fa-times"></i>
+                </a>
+            {% else %}
+                <a href="{% url urls.auth_activate %}"
+                   class="btn btn-warning"
+                   title="{% trans 'Register my characters with the Industry Site' %}">
+                    <i class="fas fa-plus"></i>
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
