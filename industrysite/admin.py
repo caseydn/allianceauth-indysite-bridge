@@ -6,7 +6,7 @@ from django.urls import path
 
 from allianceauth.authentication.models import CharacterOwnership
 
-from . import collector, data_sources
+from . import collector, data_sources, sde_sources
 from .models import IndustrySiteAccount
 
 logger = logging.getLogger(__name__)
@@ -40,6 +40,7 @@ class IndustrySiteAccountAdmin(admin.ModelAdmin):
             title="Industry Site — data being provided",
             character_id=character_id,
             result=None,
+            sde_status=sde_sources.status(),
         )
 
         if character_id.isdigit():

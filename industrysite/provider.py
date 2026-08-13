@@ -14,10 +14,13 @@ from functools import wraps
 from django.core.cache import cache
 from django.http import HttpResponseForbidden, JsonResponse
 
-from . import app_settings, data_sources
+from . import app_settings, data_sources, sde_sources
 from .signing import verify
 
 logger = logging.getLogger(__name__)
+
+# SDE is effectively static — cache pull responses for a day.
+SDE_CACHE = 86400
 
 
 def require_signature(view):
@@ -77,3 +80,50 @@ def character_industry_jobs(request, character_id):
 @require_signature
 def character_skills(request, character_id):
     return _respond(character_id, "skills", data_sources.skills)
+
+
+# --------------------------------------------------------------------------- #
+# SDE endpoints (read from AA's eveuniverse / CorpTools SDE — no ESI)
+# --------------------------------------------------------------------------- #
+@require_signature
+def sde_type(request, type_id):
+    key = f"industrysite:sde:type:{type_id}"
+    data = cache.get(key)
+    if data is None:
+        data = sde_sources.type_info(type_id)
+        if data is None:
+            return JsonResponse({"type_id": type_id, "error": "not_found"}, status=404)
+        cache.set(key, data, SDE_CACHE)
+    return JsonResponse(data)
+
+
+@require_signature
+def sde_types(request):
+    """Bulk name resolution: /sde/types/?ids=34,35,36 -> {types:{id:name}}."""
+    raw = request.GET.get("ids", "")
+    ids = [int(x) for x in raw.split(",") if x.strip().isdigit()]
+    if not ids:
+        return JsonResponse({"types": {}})
+    return JsonResponse({"types": sde_sources.types_bulk(ids)})
+
+
+@require_signature
+def sde_type_materials(request, type_id):
+    key = f"industrysite:sde:mats:{type_id}"
+    data = cache.get(key)
+    if data is None:
+        data = sde_sources.type_materials(type_id) or []
+        cache.set(key, data, SDE_CACHE)
+    return JsonResponse({"type_id": type_id, "materials": data})
+
+
+@require_signature
+def sde_blueprint(request, type_id):
+    key = f"industrysite:sde:bp:{type_id}"
+    data = cache.get(key)
+    if data is None:
+        data = sde_sources.blueprint(type_id)
+        if data is None:
+            return JsonResponse({"blueprint_type_id": type_id, "error": "not_found"}, status=404)
+        cache.set(key, data, SDE_CACHE)
+    return JsonResponse(data)

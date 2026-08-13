@@ -24,4 +24,13 @@ urlpatterns = [
         provider.character_skills,
         name="api_skills",
     ),
+    # SDE (Static Data Export) read from AA's eveuniverse / CorpTools SDE.
+    path("api/sde/types/", provider.sde_types, name="api_sde_types"),
+    path("api/sde/types/<int:type_id>/", provider.sde_type, name="api_sde_type"),
+    path(
+        "api/sde/types/<int:type_id>/materials/",
+        provider.sde_type_materials,
+        name="api_sde_type_materials",
+    ),
+    path("api/sde/blueprints/<int:type_id>/", provider.sde_blueprint, name="api_sde_blueprint"),
 ]

@@ -17,6 +17,16 @@
         would receive for this character.
     </p>
 
+    <div class="module" style="margin-bottom: 1.5em;">
+        <h2>{% trans 'SDE sources' %}</h2>
+        <p style="padding: 0 1em;">
+            django-eveuniverse:
+            {% if sde_status.eveuniverse %}<strong style="color:#417690;">available</strong>{% else %}<em style="color:#999;">not installed</em>{% endif %}
+            &nbsp;&middot;&nbsp; CorpTools SDE:
+            {% if sde_status.corptools_sde %}<strong style="color:#417690;">available</strong>{% else %}<em style="color:#999;">not installed</em>{% endif %}
+        </p>
+    </div>
+
     <form method="get" style="margin: 1em 0;">
         <label for="character_id"><strong>{% trans 'Character ID:' %}</strong></label>
         <input type="text" id="character_id" name="character_id" value="{{ character_id }}"
