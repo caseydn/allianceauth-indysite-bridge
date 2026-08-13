@@ -254,6 +254,44 @@ def _first(character_id, *sources):
     return None
 
 
+def _count(data):
+    if data is None:
+        return 0
+    if isinstance(data, dict):
+        return len(data.get("skills", []))
+    return len(data)
+
+
+def _safe(fn, character_id):
+    try:
+        return fn(character_id)
+    except Exception:  # pragma: no cover - defensive
+        return None
+
+
+def describe(character_id):
+    """Report, per dataset, which AA source holds the data and how many rows.
+
+    Used by the admin "Data preview" page so you can see exactly what the plugin
+    would serve the industrial site for a character. Never calls ESI.
+    """
+
+    def probe(ma_fn, ct_fn):
+        data = _safe(ma_fn, character_id)
+        if data:
+            return {"source": "Member Audit", "count": _count(data)}
+        data = _safe(ct_fn, character_id)
+        if data:
+            return {"source": "CorpTools", "count": _count(data)}
+        return {"source": None, "count": 0}
+
+    return {
+        "assets": probe(_ma_assets, _ct_assets),
+        "skills": probe(_ma_skills, _ct_skills),
+        "industry_jobs": probe(_ma_industry_jobs, _ct_industry_jobs),
+    }
+
+
 def self_test(character_id):
     """Print what each source resolves for a character. Run from manage.py shell."""
     for name, fn in (("assets", assets), ("skills", skills), ("industry_jobs", industry_jobs)):

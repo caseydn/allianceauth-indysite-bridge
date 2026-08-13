@@ -89,11 +89,12 @@ twine upload dist/*
 
 ## Pull API data source
 
-`provider.py` serves assets / skills from **Member Audit** first, then
-**CorpTools**, then falls back to a live **django-esi** call (AA makes the ESI
-request, not the industrial site). Industry jobs use the ESI fallback unless a
-cached source is present. Field mappings live in `data_sources.py`; verify them
-against your installed versions with:
+AA is **not** an ESI gateway. `provider.py` serves assets / industry jobs / skills
+by reading data Alliance Auth **already stores** — **Member Audit** first, then
+**CorpTools** — kept fresh by AA's own schedules. It **never calls CCP ESI**. If a
+character isn't audited/synced in AA yet, the endpoint returns 404 and the
+industrial site handles it on its side. Field mappings live in `data_sources.py`;
+verify them against your installed versions with:
 
 ```bash
 python manage.py shell -c "from industrysite.data_sources import self_test; self_test(CHARACTER_ID)"

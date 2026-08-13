@@ -1,0 +1,96 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+    <div class="breadcrumbs">
+        <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+        &rsaquo; <a href="{% url 'admin:industrysite_industrysiteaccount_changelist' %}">Industry Site accounts</a>
+        &rsaquo; {% trans 'Data preview' %}
+    </div>
+{% endblock %}
+
+{% block content %}
+    <h1>Industry Site — data being provided</h1>
+    <p class="help">
+        Everything below is read from Alliance Auth's own database (Member Audit /
+        CorpTools). No ESI calls are made. This is exactly what the industrial site
+        would receive for this character.
+    </p>
+
+    <form method="get" style="margin: 1em 0;">
+        <label for="character_id"><strong>{% trans 'Character ID:' %}</strong></label>
+        <input type="text" id="character_id" name="character_id" value="{{ character_id }}"
+               placeholder="e.g. 2123637809" style="width: 12em;">
+        <button type="submit" class="button default">{% trans 'Show' %}</button>
+    </form>
+
+    {% if result %}
+        <div class="module" style="margin-bottom: 1.5em;">
+            <h2>
+                Character {{ result.character_id }}
+                {% if result.owner %}&mdash; AA user: <strong>{{ result.owner }}</strong>{% endif %}
+            </h2>
+            {% if not result.owner %}
+                <p style="color:#ba2121; padding: 0 1em;">No Alliance Auth user owns this character.</p>
+            {% endif %}
+        </div>
+
+        <div class="module" style="margin-bottom: 1.5em;">
+            <h2>{% trans 'Pull data (assets / jobs / skills)' %}</h2>
+            <table>
+                <thead>
+                    <tr><th>{% trans 'Dataset' %}</th><th>{% trans 'Source in AA' %}</th><th>{% trans 'Rows' %}</th></tr>
+                </thead>
+                <tbody>
+                    {% for kind, info in result.data.items %}
+                        <tr>
+                            <td>{{ kind }}</td>
+                            <td>
+                                {% if info.source %}
+                                    {{ info.source }}
+                                {% else %}
+                                    <em style="color:#999;">not stored in AA yet</em>
+                                {% endif %}
+                            </td>
+                            <td>{{ info.count }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="3"><em>No data readers available.</em></td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if result.payload %}
+            <div class="module" style="margin-bottom: 1.5em;">
+                <h2>{% trans 'Identity &amp; roles pushed to the site' %}</h2>
+                <p style="padding: 0 1em;">
+                    <strong>Main character:</strong> {{ result.payload.main_character_id }}
+                    &nbsp;&middot;&nbsp; <strong>State:</strong> {{ result.payload.state|default:"—" }}
+                    &nbsp;&middot;&nbsp; <strong>Groups:</strong>
+                    {% if result.payload.groups %}{{ result.payload.groups|join:", " }}{% else %}—{% endif %}
+                </p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>{% trans 'Character' %}</th><th>ID</th><th>{% trans 'Corp' %}</th>
+                            <th>{% trans 'Alliance' %}</th><th>{% trans 'Main' %}</th><th>{% trans 'Granted scopes' %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in result.payload.characters %}
+                            <tr>
+                                <td>{{ c.name }}</td>
+                                <td>{{ c.character_id }}</td>
+                                <td>{{ c.corporation_name }}</td>
+                                <td>{{ c.alliance_name|default:"—" }}</td>
+                                <td>{% if c.is_main %}&#10004;{% endif %}</td>
+                                <td>{{ c.granted_scopes|length }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    {% endif %}
+{% endblock %}
