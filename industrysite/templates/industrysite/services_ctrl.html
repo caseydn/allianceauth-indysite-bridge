@@ -1,42 +1,42 @@
 {% load i18n %}
 {% comment %}
-    Rendered into the AA Services page flex/grid alongside the other service
-    cards. Returns a self-contained Bootstrap 5 card (not a <tr>) so it matches
-    the Discord cards, including the default grey card-footer.
+    Rendered into the AA Services page alongside the other service cards. Fixed
+    width (like the Discord cards) so it does not stretch to a grid column. The
+    site link lives in the footer as a button with the activate/deactivate ones.
 {% endcomment %}
-<div class="col-12 col-md-6 col-lg-4 col-xl-3 mb-3">
-    <div class="card h-100 text-center">
-        <div class="card-body">
-            <h4 class="card-title mb-2">{{ service_name }}</h4>
-            {% if connected %}
-                <span class="badge bg-success">{% trans "Enabled" %}</span>
-            {% else %}
-                <span class="badge bg-secondary">{% trans "Disabled" %}</span>
-            {% endif %}
-            <p class="card-text mt-3 mb-1">OBP Industry Tools</p>
-            {% if connected %}
-                <p class="card-text mb-1">{{ username }}</p>
-            {% endif %}
-            {% if service_url %}
-                <p class="card-text small mb-0">
-                    <a href="{{ service_url }}" target="_blank" rel="noopener">{{ service_url }}</a>
-                </p>
-            {% endif %}
-        </div>
-        <div class="card-footer">
-            {% if connected %}
-                <a href="{% url urls.auth_deactivate %}"
-                   class="btn btn-danger"
-                   title="{% trans 'Deactivate the Industry Site service' %}">
-                    <i class="fas fa-times"></i>
-                </a>
-            {% else %}
-                <a href="{% url urls.auth_activate %}"
-                   class="btn btn-warning"
-                   title="{% trans 'Register my characters with the Industry Site' %}">
-                    <i class="fas fa-plus"></i>
-                </a>
-            {% endif %}
-        </div>
+<div class="card text-center mb-3" style="width: 18rem;">
+    <div class="card-body">
+        <h4 class="card-title mb-2">{{ service_name }}</h4>
+        {% if connected %}
+            <span class="badge bg-success">{% trans "Enabled" %}</span>
+        {% else %}
+            <span class="badge bg-secondary">{% trans "Disabled" %}</span>
+        {% endif %}
+        <p class="card-text mt-3 mb-1">OBP Industry Tools</p>
+        {% if connected %}
+            <p class="card-text mb-0">{{ username }}</p>
+        {% endif %}
+    </div>
+    <div class="card-footer">
+        {% if connected %}
+            <a href="{% url urls.auth_deactivate %}"
+               class="btn btn-danger"
+               title="{% trans 'Deactivate the Industry Site service' %}">
+                <i class="fas fa-times"></i>
+            </a>
+        {% else %}
+            <a href="{% url urls.auth_activate %}"
+               class="btn btn-warning"
+               title="{% trans 'Register my characters with the Industry Site' %}">
+                <i class="fas fa-plus"></i>
+            </a>
+        {% endif %}
+        {% if service_url %}
+            <a href="{{ service_url }}" target="_blank" rel="noopener"
+               class="btn btn-warning"
+               title="{% trans 'Open the Industry Site' %}">
+                <i class="fas fa-link"></i>
+            </a>
+        {% endif %}
     </div>
 </div>

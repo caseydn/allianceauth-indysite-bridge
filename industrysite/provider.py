@@ -127,3 +127,51 @@ def sde_blueprint(request, type_id):
             return JsonResponse({"blueprint_type_id": type_id, "error": "not_found"}, status=404)
         cache.set(key, data, SDE_CACHE)
     return JsonResponse(data)
+
+
+# --------------------------------------------------------------------------- #
+# Bulk SDE export — for the site's `sde:import --aa` full refresh. Paginated.
+# --------------------------------------------------------------------------- #
+def _page(request, default_limit, max_limit):
+    try:
+        offset = max(0, int(request.GET.get("offset", 0)))
+    except (TypeError, ValueError):
+        offset = 0
+    try:
+        limit = int(request.GET.get("limit", default_limit))
+    except (TypeError, ValueError):
+        limit = default_limit
+    return offset, max(1, min(limit, max_limit))
+
+
+@require_signature
+def sde_export_counts(request):
+    return JsonResponse(sde_sources.export_counts())
+
+
+@require_signature
+def sde_export_types(request):
+    offset, limit = _page(request, 1000, 5000)
+    rows = sde_sources.export_types(offset, limit)
+    return JsonResponse({"offset": offset, "limit": limit, "count": len(rows), "rows": rows})
+
+
+@require_signature
+def sde_export_blueprints(request):
+    offset, limit = _page(request, 1000, 5000)
+    rows = sde_sources.export_blueprints(offset, limit)
+    return JsonResponse({"offset": offset, "limit": limit, "count": len(rows), "rows": rows})
+
+
+@require_signature
+def sde_export_blueprint_materials(request):
+    offset, limit = _page(request, 2000, 10000)
+    rows = sde_sources.export_blueprint_materials(offset, limit)
+    return JsonResponse({"offset": offset, "limit": limit, "count": len(rows), "rows": rows})
+
+
+@require_signature
+def sde_export_type_materials(request):
+    offset, limit = _page(request, 2000, 10000)
+    rows = sde_sources.export_type_materials(offset, limit)
+    return JsonResponse({"offset": offset, "limit": limit, "count": len(rows), "rows": rows})

@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.shortcuts import redirect
 
 from .models import IndustrySiteAccount
-from .tasks import deactivate_account, push_account
+from .tasks import notify_site_deactivate, push_account
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,14 @@ def activate(request):
 
 @login_required
 def deactivate(request):
-    if IndustrySiteAccount.objects.filter(user=request.user).exists():
-        deactivate_account.delay(request.user.pk)
+    account = IndustrySiteAccount.objects.filter(user=request.user).first()
+    if account:
+        # Unlink locally right away so the Services card flips to Disabled
+        # immediately, then notify the site in the background (best-effort).
+        user_id = request.user.pk
+        main_id = account.main_character_id
+        token = account.site_user_token
+        account.delete()
+        notify_site_deactivate.delay(user_id, main_id, token)
         messages.success(request, "Industry Site account disconnected.")
     return redirect(SERVICES_PAGE)

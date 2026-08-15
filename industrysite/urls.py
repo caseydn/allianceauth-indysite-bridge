@@ -33,4 +33,18 @@ urlpatterns = [
         name="api_sde_type_materials",
     ),
     path("api/sde/blueprints/<int:type_id>/", provider.sde_blueprint, name="api_sde_blueprint"),
+    # Bulk SDE export (paginated) for the site's full sde:import --aa refresh.
+    path("api/sde/export/counts/", provider.sde_export_counts, name="api_sde_export_counts"),
+    path("api/sde/export/types/", provider.sde_export_types, name="api_sde_export_types"),
+    path("api/sde/export/blueprints/", provider.sde_export_blueprints, name="api_sde_export_blueprints"),
+    path(
+        "api/sde/export/blueprint-materials/",
+        provider.sde_export_blueprint_materials,
+        name="api_sde_export_blueprint_materials",
+    ),
+    path(
+        "api/sde/export/type-materials/",
+        provider.sde_export_type_materials,
+        name="api_sde_export_type_materials",
+    ),
 ]

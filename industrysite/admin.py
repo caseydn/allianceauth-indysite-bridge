@@ -41,6 +41,7 @@ class IndustrySiteAccountAdmin(admin.ModelAdmin):
             character_id=character_id,
             result=None,
             sde_status=sde_sources.status(),
+            sde_counts=sde_sources.export_counts(),
         )
 
         if character_id.isdigit():

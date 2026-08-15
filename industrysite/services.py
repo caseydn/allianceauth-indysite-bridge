@@ -11,7 +11,7 @@ from allianceauth.services.hooks import ServicesHook
 
 from . import app_settings
 from .models import IndustrySiteAccount
-from .tasks import deactivate_account, push_account
+from .tasks import notify_site_deactivate, push_account
 
 logger = logging.getLogger(__name__)
 
@@ -31,9 +31,15 @@ class IndustrySiteService(ServicesHook):
         return user.has_perm(self.access_perm)
 
     def delete_user(self, user, notify_user=False):
-        if not IndustrySiteAccount.objects.filter(user=user).exists():
+        account = IndustrySiteAccount.objects.filter(user=user).first()
+        if not account:
             return False
-        deactivate_account.delay(user.pk)
+        # Unlink locally immediately, notify the site best-effort in the background.
+        user_id = user.pk
+        main_id = account.main_character_id
+        token = account.site_user_token
+        account.delete()
+        notify_site_deactivate.delay(user_id, main_id, token)
         if notify_user:
             try:
                 from allianceauth.notifications import notify

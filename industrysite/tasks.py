@@ -48,19 +48,15 @@ def push_account(self, user_id: int, activate: bool = False):
 
 
 @shared_task(bind=True, max_retries=5, default_retry_delay=30)
-def deactivate_account(self, user_id: int):
-    """Tell the site to unlink the user, then drop the local account row."""
+def notify_site_deactivate(self, user_id: int, main_character_id, user_token: str = ""):
+    """Best-effort: tell the site to unlink a user. The local IndustrySiteAccount
+    is already removed by the caller (so the Services card flips to Disabled
+    immediately); this only notifies the site and does not touch the DB.
+    """
+    payload = {"aa_user_id": user_id, "main_character_id": main_character_id}
     try:
-        account = IndustrySiteAccount.objects.get(user_id=user_id)
-    except IndustrySiteAccount.DoesNotExist:
-        return
-
-    payload = {"aa_user_id": user_id, "main_character_id": account.main_character_id}
-    try:
-        IndustrySiteManager.deactivate_user(payload, user_token=account.site_user_token)
+        IndustrySiteManager.deactivate_user(payload, user_token=user_token or "")
+        logger.info("industrysite site-deactivate notified for user %s", user_id)
     except Exception as exc:
-        logger.exception("industrysite deactivate failed for user %s", user_id)
+        logger.warning("industrysite deactivate notify failed for user %s: %s", user_id, exc)
         raise self.retry(exc=exc)
-
-    account.delete()
-    logger.info("industrysite deactivated user %s", user_id)

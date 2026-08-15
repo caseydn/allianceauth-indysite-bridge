@@ -25,6 +25,16 @@
             &nbsp;&middot;&nbsp; CorpTools SDE:
             {% if sde_status.corptools_sde %}<strong style="color:#417690;">available</strong>{% else %}<em style="color:#999;">not installed</em>{% endif %}
         </p>
+        <p style="padding: 0 1em;">
+            <strong>Row counts:</strong>
+            types {{ sde_counts.types }} &middot;
+            blueprints {{ sde_counts.blueprints }} &middot;
+            blueprint materials {{ sde_counts.blueprint_materials }} &middot;
+            reprocessing {{ sde_counts.type_materials }}
+            {% if not sde_counts.blueprints %}
+                <br><em style="color:#ba2121;">No blueprint SDE loaded in AA — blueprints/BOM must stay on the local (Fuzzwork) import until AA's industry SDE is loaded.</em>
+            {% endif %}
+        </p>
     </div>
 
     <form method="get" style="margin: 1em 0;">

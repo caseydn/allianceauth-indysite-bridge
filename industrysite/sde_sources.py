@@ -216,6 +216,155 @@ def status():
     }
 
 
+# --------------------------------------------------------------------------- #
+# Bulk export (for the site's sde:import --aa). Paginated, ordered by id so the
+# site can page through the whole SDE and refresh its local tables from AA.
+# --------------------------------------------------------------------------- #
+def export_types(offset=0, limit=1000):
+    m = _eu()
+    if m:
+        try:
+            qs = (
+                m.EveType.objects.select_related(
+                    "eve_group", "eve_group__eve_category", "eve_market_group"
+                )
+                .order_by("id")[offset : offset + limit]
+            )
+            out = []
+            for t in qs:
+                grp = getattr(t, "eve_group", None)
+                cat = getattr(grp, "eve_category", None) if grp else None
+                out.append(
+                    {
+                        "type_id": t.id,
+                        "name": t.name,
+                        "group_id": getattr(grp, "id", None),
+                        "category_id": getattr(cat, "id", None),
+                        "market_group_id": getattr(getattr(t, "eve_market_group", None), "id", None),
+                        "volume": getattr(t, "volume", None),
+                        "packaged_volume": getattr(t, "packaged_volume", None),
+                        "published": bool(getattr(t, "published", False)),
+                    }
+                )
+            return out
+        except Exception:
+            logger.exception("export_types eveuniverse failed")
+    model = _ct_type_model()
+    if model:
+        try:
+            out = []
+            for t in model.objects.order_by("type_id")[offset : offset + limit]:
+                grp = getattr(t, "group", None)
+                out.append(
+                    {
+                        "type_id": _int(getattr(t, "type_id", None)),
+                        "name": getattr(t, "name", None),
+                        "group_id": _int(getattr(grp, "group_id", None)) if grp else None,
+                        "category_id": None,
+                        "market_group_id": None,
+                        "volume": getattr(t, "volume", None),
+                        "packaged_volume": None,
+                        "published": bool(getattr(t, "published", True)),
+                    }
+                )
+            return out
+        except Exception:
+            logger.exception("export_types corptools failed")
+    return []
+
+
+def _eu_industry(model_name):
+    m = _eu()
+    return getattr(m, model_name, None) if m else None
+
+
+def export_blueprints(offset=0, limit=1000):
+    """Blueprint -> product for manufacturing (1) + reaction (11)."""
+    Prod = _eu_industry("EveIndustryActivityProduct")
+    if not Prod:
+        return []
+    try:
+        qs = Prod.objects.filter(activity_id__in=[1, 11]).order_by("eve_type_id")[offset : offset + limit]
+        return [
+            {
+                "blueprint_type_id": _int(getattr(p, "eve_type_id", None)),
+                "product_type_id": _int(getattr(p, "product_eve_type_id", None)),
+                "product_quantity": _int(getattr(p, "quantity", 1)) or 1,
+                "activity_id": _int(getattr(p, "activity_id", 1)) or 1,
+            }
+            for p in qs
+        ]
+    except Exception:
+        logger.exception("export_blueprints failed")
+        return []
+
+
+def export_blueprint_materials(offset=0, limit=2000):
+    Mat = _eu_industry("EveIndustryActivityMaterial")
+    if not Mat:
+        return []
+    try:
+        qs = Mat.objects.filter(activity_id__in=[1, 11]).order_by("eve_type_id")[offset : offset + limit]
+        return [
+            {
+                "blueprint_type_id": _int(getattr(x, "eve_type_id", None)),
+                "material_type_id": _int(getattr(x, "material_eve_type_id", None)),
+                "quantity": _int(getattr(x, "quantity", 0)) or 0,
+                "activity_id": _int(getattr(x, "activity_id", 1)) or 1,
+            }
+            for x in qs
+        ]
+    except Exception:
+        logger.exception("export_blueprint_materials failed")
+        return []
+
+
+def export_type_materials(offset=0, limit=2000):
+    m = _eu()
+    if not m or not hasattr(m, "EveTypeMaterial"):
+        return []
+    try:
+        qs = m.EveTypeMaterial.objects.order_by("eve_type_id")[offset : offset + limit]
+        return [
+            {
+                "type_id": _int(getattr(x, "eve_type_id", None)),
+                "material_type_id": _int(getattr(x, "material_eve_type_id", None)),
+                "quantity": _int(getattr(x, "quantity", 0)) or 0,
+            }
+            for x in qs
+        ]
+    except Exception:
+        logger.exception("export_type_materials failed")
+        return []
+
+
+def export_counts():
+    """Row counts so the site (and admin page) can see how complete AA's SDE is."""
+    counts = {"types": 0, "blueprints": 0, "blueprint_materials": 0, "type_materials": 0}
+    m = _eu()
+    try:
+        if m:
+            counts["types"] = m.EveType.objects.count()
+            if hasattr(m, "EveTypeMaterial"):
+                counts["type_materials"] = m.EveTypeMaterial.objects.count()
+            Prod = _eu_industry("EveIndustryActivityProduct")
+            Mat = _eu_industry("EveIndustryActivityMaterial")
+            if Prod:
+                counts["blueprints"] = Prod.objects.filter(activity_id__in=[1, 11]).count()
+            if Mat:
+                counts["blueprint_materials"] = Mat.objects.filter(activity_id__in=[1, 11]).count()
+    except Exception:
+        logger.exception("export_counts failed")
+    if not counts["types"]:
+        model = _ct_type_model()
+        if model:
+            try:
+                counts["types"] = model.objects.count()
+            except Exception:
+                pass
+    return counts
+
+
 def self_test(type_id=34):
     """Print what each SDE reader resolves for a type. Run from manage.py shell.
 
