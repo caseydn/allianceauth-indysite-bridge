@@ -157,6 +157,20 @@ def sde_export_types(request):
 
 
 @require_signature
+def sde_export_groups(request):
+    offset, limit = _page(request, 2000, 10000)
+    rows = sde_sources.export_groups(offset, limit)
+    return JsonResponse({"offset": offset, "limit": limit, "count": len(rows), "rows": rows})
+
+
+@require_signature
+def sde_export_categories(request):
+    offset, limit = _page(request, 2000, 10000)
+    rows = sde_sources.export_categories(offset, limit)
+    return JsonResponse({"offset": offset, "limit": limit, "count": len(rows), "rows": rows})
+
+
+@require_signature
 def sde_export_blueprints(request):
     offset, limit = _page(request, 1000, 5000)
     rows = sde_sources.export_blueprints(offset, limit)

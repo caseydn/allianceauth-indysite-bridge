@@ -278,25 +278,79 @@ def _eu_industry(model_name):
     return getattr(m, model_name, None) if m else None
 
 
+def export_groups(offset=0, limit=2000):
+    m = _eu()
+    if not m:
+        return []
+    try:
+        qs = m.EveGroup.objects.select_related("eve_category").order_by("id")[offset : offset + limit]
+        return [
+            {
+                "group_id": g.id,
+                "name": g.name,
+                "category_id": getattr(getattr(g, "eve_category", None), "id", None),
+            }
+            for g in qs
+        ]
+    except Exception:
+        logger.exception("export_groups failed")
+        return []
+
+
+def export_categories(offset=0, limit=2000):
+    m = _eu()
+    if not m:
+        return []
+    try:
+        qs = m.EveCategory.objects.order_by("id")[offset : offset + limit]
+        return [{"category_id": c.id, "name": c.name} for c in qs]
+    except Exception:
+        logger.exception("export_categories failed")
+        return []
+
+
 def export_blueprints(offset=0, limit=1000):
-    """Blueprint -> product for manufacturing (1) + reaction (11)."""
+    """Blueprint -> product for manufacturing (1) + reaction (11), incl. product
+    name, run time and variant so the site can fill its `blueprints` table."""
     Prod = _eu_industry("EveIndustryActivityProduct")
     if not Prod:
         return []
     try:
-        qs = Prod.objects.filter(activity_id__in=[1, 11]).order_by("eve_type_id")[offset : offset + limit]
-        return [
-            {
-                "blueprint_type_id": _int(getattr(p, "eve_type_id", None)),
-                "product_type_id": _int(getattr(p, "product_eve_type_id", None)),
-                "product_quantity": _int(getattr(p, "quantity", 1)) or 1,
-                "activity_id": _int(getattr(p, "activity_id", 1)) or 1,
-            }
-            for p in qs
-        ]
+        rows = list(
+            Prod.objects.filter(activity_id__in=[1, 11])
+            .select_related("product_eve_type")
+            .order_by("eve_type_id")[offset : offset + limit]
+        )
     except Exception:
         logger.exception("export_blueprints failed")
         return []
+
+    # Attach base time (EveIndustryActivityDuration) in one query for the page.
+    durations = {}
+    Dur = _eu_industry("EveIndustryActivityDuration")
+    if Dur and rows:
+        try:
+            bp_ids = [r.eve_type_id for r in rows]
+            for d in Dur.objects.filter(eve_type_id__in=bp_ids, activity_id__in=[1, 11]):
+                durations[(d.eve_type_id, d.activity_id)] = _int(getattr(d, "time", None))
+        except Exception:
+            logger.debug("export_blueprints durations failed", exc_info=True)
+
+    out = []
+    for p in rows:
+        activity = _int(getattr(p, "activity_id", 1)) or 1
+        out.append(
+            {
+                "blueprint_type_id": _int(getattr(p, "eve_type_id", None)),
+                "product_type_id": _int(getattr(p, "product_eve_type_id", None)),
+                "product_name": getattr(getattr(p, "product_eve_type", None), "name", None),
+                "product_quantity": _int(getattr(p, "quantity", 1)) or 1,
+                "activity_id": activity,
+                "variant": "t1" if activity == 1 else "reaction",
+                "base_time": durations.get((p.eve_type_id, activity)),
+            }
+        )
+    return out
 
 
 def export_blueprint_materials(offset=0, limit=2000):
@@ -304,11 +358,16 @@ def export_blueprint_materials(offset=0, limit=2000):
     if not Mat:
         return []
     try:
-        qs = Mat.objects.filter(activity_id__in=[1, 11]).order_by("eve_type_id")[offset : offset + limit]
+        qs = (
+            Mat.objects.filter(activity_id__in=[1, 11])
+            .select_related("material_eve_type")
+            .order_by("eve_type_id")[offset : offset + limit]
+        )
         return [
             {
                 "blueprint_type_id": _int(getattr(x, "eve_type_id", None)),
                 "material_type_id": _int(getattr(x, "material_eve_type_id", None)),
+                "material_name": getattr(getattr(x, "material_eve_type", None), "name", None),
                 "quantity": _int(getattr(x, "quantity", 0)) or 0,
                 "activity_id": _int(getattr(x, "activity_id", 1)) or 1,
             }

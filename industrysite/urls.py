@@ -36,6 +36,8 @@ urlpatterns = [
     # Bulk SDE export (paginated) for the site's full sde:import --aa refresh.
     path("api/sde/export/counts/", provider.sde_export_counts, name="api_sde_export_counts"),
     path("api/sde/export/types/", provider.sde_export_types, name="api_sde_export_types"),
+    path("api/sde/export/groups/", provider.sde_export_groups, name="api_sde_export_groups"),
+    path("api/sde/export/categories/", provider.sde_export_categories, name="api_sde_export_categories"),
     path("api/sde/export/blueprints/", provider.sde_export_blueprints, name="api_sde_export_blueprints"),
     path(
         "api/sde/export/blueprint-materials/",
