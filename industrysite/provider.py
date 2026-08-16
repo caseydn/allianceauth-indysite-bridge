@@ -35,34 +35,27 @@ def require_signature(view):
     return wrapper
 
 
-def _cache_key(character_id: int, kind: str) -> str:
-    return f"industrysite:pull:{kind}:{character_id}"
-
-
 def _respond(character_id: int, kind: str, source):
-    """Read `kind` for a character from AA's stored data (Member Audit / CorpTools).
-
-    `source` is a data_sources reader that returns already-stored data or None.
+    """Read `kind` for a character straight from AA's stored data (Member Audit /
+    CorpTools). NOT cached — Member Audit is already the cache; a cache layer here
+    previously served stale-empty (`200 · 0 rows`) responses. Always reads fresh.
     Never triggers an ESI call.
     """
-    key = _cache_key(character_id, kind)
-    data = cache.get(key)
+    try:
+        data = source(character_id)
+    except Exception:  # pragma: no cover - defensive
+        logger.exception("industrysite read %s failed for %s", kind, character_id)
+        data = None
 
     if data is None:
-        try:
-            data = source(character_id)
-        except Exception:  # pragma: no cover - defensive
-            logger.exception("industrysite read %s failed for %s", kind, character_id)
-            data = None
+        # Character not audited / not synced in AA. No ESI fallback by design.
+        return JsonResponse(
+            {"character_id": character_id, "error": "no_data", "kind": kind},
+            status=404,
+        )
 
-        if data is None:
-            # Not audited / not synced in AA yet — no ESI fallback here by design.
-            return JsonResponse(
-                {"character_id": character_id, "error": "no_data", "kind": kind},
-                status=404,
-            )
-
-        cache.set(key, data, app_settings.INDUSTRYSITE_PULL_CACHE)
+    count = len(data.get("skills", [])) if isinstance(data, dict) else len(data)
+    logger.info("industrysite served %s %s rows for char %s", count, kind, character_id)
 
     return JsonResponse({"character_id": character_id, kind: data})
 
