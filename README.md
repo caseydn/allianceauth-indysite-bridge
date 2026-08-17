@@ -72,6 +72,24 @@ exit
 sudo supervisorctl restart myauth:
 ```
 
+## REQUIRED: enable public views
+
+AA auto-decorates every custom-app view with `main_character_required`, so without this
+step the signed pull-API requests get redirected to the **login page** and the industrial
+site receives HTML instead of JSON (every pull shows `200 · 0 rows`, body = the AA login
+page). The plugin already marks its API endpoints as public views (via the URL hook's
+`excluded_views`), but AA also requires the admin to allow the app to have public views.
+Add this to `myauth/settings/local.py`:
+
+```python
+APPS_WITH_PUBLIC_VIEWS = ["industrysite"]
+```
+
+(Append `"industrysite"` if you already have an `APPS_WITH_PUBLIC_VIEWS` list.) Only the
+API endpoints (`/industrysite/api/...`) are public; the Services-page activate/deactivate
+buttons still require login. The API is secured by the HMAC shared-key signature, so this
+is safe. Restart with `sudo supervisorctl restart myauth:` after adding it.
+
 ## Grant access
 
 Users only see *Industry Site* if they hold
