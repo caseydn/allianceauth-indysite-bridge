@@ -75,6 +75,17 @@ def character_skills(request, character_id):
     return _respond(character_id, "skills", data_sources.skills)
 
 
+@require_signature
+def location_names(request):
+    """Resolve location ids -> names from Member Audit: /locations/?ids=60003760,... """
+    raw = request.GET.get("ids", "")
+    ids = [int(x) for x in raw.split(",") if x.strip().isdigit()]
+    if not ids:
+        return JsonResponse({"locations": []})
+    data = data_sources.locations(ids)
+    return JsonResponse({"locations": data if data is not None else []})
+
+
 # --------------------------------------------------------------------------- #
 # SDE endpoints (read from AA's eveuniverse / CorpTools SDE — no ESI)
 # --------------------------------------------------------------------------- #

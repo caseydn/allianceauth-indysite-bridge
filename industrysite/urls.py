@@ -24,6 +24,8 @@ urlpatterns = [
         provider.character_skills,
         name="api_skills",
     ),
+    # Bulk location id -> name resolution from Member Audit (stations + structures).
+    path("api/locations/", provider.location_names, name="api_locations"),
     # SDE (Static Data Export) read from AA's eveuniverse / CorpTools SDE.
     path("api/sde/types/", provider.sde_types, name="api_sde_types"),
     path("api/sde/types/<int:type_id>/", provider.sde_type, name="api_sde_type"),

@@ -292,6 +292,40 @@ def describe(character_id):
     }
 
 
+def locations(ids):
+    """Resolve station/structure location ids -> names from Member Audit's Location
+    table (Member Audit already resolves NPC stations AND player structures). Bulk.
+    Returns a list of {location_id, name, system_id, system_name, type_id}, or None
+    if Member Audit isn't installed.
+    """
+    ids = [i for i in (_int(x) for x in ids) if i]
+    if not ids:
+        return []
+    try:
+        from memberaudit.models import Location
+    except Exception:
+        return None
+    try:
+        qs = Location.objects.filter(id__in=ids).select_related("eve_solar_system", "eve_type")
+    except Exception:
+        logger.exception("memberaudit Location query failed")
+        return None
+
+    out = []
+    for loc in qs:
+        system = getattr(loc, "eve_solar_system", None)
+        out.append(
+            {
+                "location_id": _int(getattr(loc, "id", None)),
+                "name": getattr(loc, "name", None),
+                "system_id": _int(getattr(system, "id", None)),
+                "system_name": getattr(system, "name", None),
+                "type_id": _int(getattr(loc, "eve_type_id", None)),
+            }
+        )
+    return out
+
+
 def self_test(character_id):
     """Print what each source resolves for a character. Run from manage.py shell."""
     for name, fn in (("assets", assets), ("skills", skills), ("industry_jobs", industry_jobs)):
