@@ -298,7 +298,7 @@ def locations(ids):
     Returns a list of {location_id, name, system_id, system_name, type_id}, or None
     if Member Audit isn't installed.
     """
-    ids = [i for i in (_int(x) for x in ids) if i]
+    ids = [i for i in (_num(x) for x in ids) if i]
     if not ids:
         return []
     try:
@@ -316,11 +316,11 @@ def locations(ids):
         system = getattr(loc, "eve_solar_system", None)
         out.append(
             {
-                "location_id": _int(getattr(loc, "id", None)),
+                "location_id": _num(getattr(loc, "id", None)),
                 "name": getattr(loc, "name", None),
-                "system_id": _int(getattr(system, "id", None)),
+                "system_id": _num(getattr(system, "id", None)),
                 "system_name": getattr(system, "name", None),
-                "type_id": _int(getattr(loc, "eve_type_id", None)),
+                "type_id": _num(getattr(loc, "eve_type_id", None)),
             }
         )
     return out
