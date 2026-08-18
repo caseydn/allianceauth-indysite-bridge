@@ -21,6 +21,7 @@ PUBLIC_API_VIEWS = [
     "industrysite.provider.character_assets",
     "industrysite.provider.character_industry_jobs",
     "industrysite.provider.character_skills",
+    "industrysite.provider.character_planets",
     "industrysite.provider.location_names",
     "industrysite.provider.sde_type",
     "industrysite.provider.sde_types",

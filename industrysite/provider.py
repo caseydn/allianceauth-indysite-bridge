@@ -76,6 +76,11 @@ def character_skills(request, character_id):
 
 
 @require_signature
+def character_planets(request, character_id):
+    return _respond(character_id, "planets", data_sources.planets)
+
+
+@require_signature
 def location_names(request):
     """Resolve location ids -> names from Member Audit: /locations/?ids=60003760,... """
     raw = request.GET.get("ids", "")

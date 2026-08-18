@@ -27,6 +27,13 @@ def _num(value, default=0):
         return default
 
 
+def _float(value, default=None):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
 # --------------------------------------------------------------------------- #
 # Member Audit
 # --------------------------------------------------------------------------- #
@@ -114,6 +121,78 @@ def _ma_industry_jobs(character_id):
     if not rows:
         return None
     return [_industry_job_row(j) for j in rows]
+
+
+def _ir_planets(character_id):
+    """Planetary Interaction colonies from the industry_reforged plugin
+    (CharacterPlanet + PlanetPin). Returns each colony with its FULL pin layout:
+    extractors (install/expiry/cycle/yield), factories (schematic/product) and
+    storage (contents/capacity). No ESI — reads industry_reforged's stored data.
+    """
+    try:
+        from industry_reforged.models import CharacterPlanet
+    except Exception:
+        return None
+    try:
+        rows = list(
+            CharacterPlanet.objects.filter(character__character_id=character_id)
+            .select_related("eve_planet", "eve_system", "planet_type")
+            .prefetch_related("pins", "pins__type", "pins__product_type")
+        )
+    except Exception:
+        logger.exception("industry_reforged CharacterPlanet query failed")
+        return None
+    if not rows:
+        return None
+
+    out = []
+    for p in rows:
+        planet = getattr(p, "eve_planet", None)
+        system = getattr(p, "eve_system", None)
+        ptype = getattr(p, "planet_type", None)
+
+        pins = []
+        try:
+            pin_rows = list(p.pins.all())
+        except Exception:
+            pin_rows = []
+        for pin in pin_rows:
+            pins.append(
+                {
+                    "pin_id": _num(getattr(pin, "pin_id", None), None),
+                    "type_id": _num(getattr(pin, "type_id", None), None),
+                    "type_name": getattr(getattr(pin, "type", None), "name", None),
+                    "product_type_id": _num(getattr(pin, "product_type_id", None), None),
+                    "product_type_name": getattr(getattr(pin, "product_type", None), "name", None),
+                    "schematic_id": _num(getattr(pin, "schematic_id", None), None),
+                    "install_time": _iso(getattr(pin, "install_time", None)),
+                    "expiry_time": _iso(getattr(pin, "expiry_time", None)),
+                    "last_cycle_start": _iso(getattr(pin, "last_cycle_start", None)),
+                    "cycle_time": _num(getattr(pin, "cycle_time", None), None),
+                    "extraction_yield": _float(getattr(pin, "extraction_yield", None)),
+                    "capacity": _float(getattr(pin, "capacity", None)),
+                    "contents_volume": _float(getattr(pin, "contents_volume", None)),
+                    "contents": getattr(pin, "contents", None),
+                }
+            )
+
+        out.append(
+            {
+                "planet_id": _num(getattr(p, "planet_id", None), None),
+                "planet_name": getattr(planet, "name", None),
+                "planet_type_id": _num(getattr(p, "planet_type_id", None), None)
+                or _num(getattr(ptype, "id", None), None),
+                "planet_type_name": getattr(ptype, "name", None),
+                "system_id": _num(getattr(p, "system_id", None), None)
+                or _num(getattr(system, "id", None), None),
+                "system_name": getattr(system, "name", None),
+                "upgrade_level": _num(getattr(p, "upgrade_level", None), None),
+                "num_pins": _num(getattr(p, "num_pins", None), None),
+                "last_update": _iso(getattr(p, "last_update", None)),
+                "pins": pins,
+            }
+        )
+    return out
 
 
 # --------------------------------------------------------------------------- #
@@ -242,6 +321,10 @@ def industry_jobs(character_id):
     return _first(character_id, _ma_industry_jobs, _ct_industry_jobs)
 
 
+def planets(character_id):
+    return _safe(_ir_planets, character_id)
+
+
 def _first(character_id, *sources):
     for source in sources:
         try:
@@ -289,6 +372,7 @@ def describe(character_id):
         "assets": probe(_ma_assets, _ct_assets),
         "skills": probe(_ma_skills, _ct_skills),
         "industry_jobs": probe(_ma_industry_jobs, _ct_industry_jobs),
+        "planets": probe(_ir_planets, lambda _cid: None),
     }
 
 
