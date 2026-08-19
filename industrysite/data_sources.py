@@ -123,6 +123,47 @@ def _ma_industry_jobs(character_id):
     return [_industry_job_row(j) for j in rows]
 
 
+def _ir_industry_jobs(character_id):
+    """Personal industry jobs from the industry_reforged plugin
+    (CharacterIndustryJob). Same row shape as _industry_job_row so the site
+    consumes it identically to the Member Audit source. No ESI."""
+    try:
+        from industry_reforged.models import CharacterIndustryJob
+    except Exception:
+        return None
+    try:
+        rows = list(
+            CharacterIndustryJob.objects.filter(character__character_id=character_id)
+            .select_related("blueprint_type", "product_type")
+        )
+    except Exception:
+        logger.exception("industry_reforged CharacterIndustryJob query failed")
+        return None
+    if not rows:
+        return None
+    out = []
+    for j in rows:
+        out.append(
+            {
+                "job_id": _num(getattr(j, "job_id", None), None),
+                "activity_id": _num(getattr(j, "activity_id", None), None),
+                "blueprint_type_id": _num(getattr(j, "blueprint_type_id", None), None),
+                "product_type_id": _num(getattr(j, "product_type_id", None), None),
+                "status": getattr(j, "status", "") or "",
+                "runs": _num(getattr(j, "runs", 0)),
+                "start_date": _iso(getattr(j, "start_date", None)),
+                "end_date": _iso(getattr(j, "end_date", None)),
+                "facility_id": _num(getattr(j, "facility_id", None), None),
+                "station_id": _num(getattr(j, "station_id", None), None),
+                "location_id": _num(getattr(j, "location_id", None), None),
+                "cost": _float(getattr(j, "cost", None)),
+                "probability": _float(getattr(j, "probability", None)),
+                "successful_runs": _num(getattr(j, "successful_runs", None), None),
+            }
+        )
+    return out
+
+
 def _ir_planets(character_id):
     """Planetary Interaction colonies from the industry_reforged plugin
     (CharacterPlanet + PlanetPin). Returns each colony with its FULL pin layout:
@@ -318,7 +359,9 @@ def skills(character_id):
 
 
 def industry_jobs(character_id):
-    return _first(character_id, _ma_industry_jobs, _ct_industry_jobs)
+    # Prefer industry_reforged (richer: corp-aware, cost/probability), then fall
+    # back to Member Audit / CorpTools.
+    return _first(character_id, _ir_industry_jobs, _ma_industry_jobs, _ct_industry_jobs)
 
 
 def planets(character_id):

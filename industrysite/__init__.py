@@ -14,4 +14,4 @@ here — this plugin never calls CCP; it only serves data AA already keeps in
 its own database.
 """
 
-__version__ = "1.0.15"
+__version__ = "1.0.16"
